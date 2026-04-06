@@ -16,6 +16,8 @@ def camel_case(snake_case_str: str) -> str:
 def is_valid_filename(value):
     """Raise ValueError if the declared string contains any of the following
     characters: <>:"/\\|?*"""
+    if value is None:
+        return value
     invalid_chars = r'<>:"/\|?*'
     if any(invalid_char in value for invalid_char in invalid_chars):
         raise ValueError(
@@ -28,6 +30,8 @@ def is_valid_filename(value):
 def strip_whitespace(value):
     """Return the declared string with leading and trailing whitespace
     removed."""
+    if value is None:
+        return value
     return value.strip()
 
 
