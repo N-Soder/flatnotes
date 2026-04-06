@@ -16,7 +16,7 @@ COPY .htmlnanorc \
     vite.config.js \
     ./
 
-RUN npm ci
+RUN npm install
 
 COPY client ./client
 RUN npm run build
@@ -58,7 +58,7 @@ COPY entrypoint.sh healthcheck.sh /
 RUN chmod +x /entrypoint.sh /healthcheck.sh
 
 VOLUME /data
-EXPOSE ${FLATNOTES_PORT}/tcp
+EXPOSE ${FLATNOTES_PORT}/TCP
 HEALTHCHECK --interval=60s --timeout=10s CMD /healthcheck.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]
