@@ -17,7 +17,6 @@
     "@mdi/js": "7.4.47",
     "@mdi/light-js": "0.2.63",
     "@tiptap/extension-collaboration": "*",
-    "@tiptap/extension-collaboration-cursor": "*",
     "@tiptap/extension-link": "*",
     "@tiptap/extension-placeholder": "*",
     "@tiptap/extension-task-item": "*",
