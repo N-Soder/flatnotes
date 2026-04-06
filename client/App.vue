@@ -1,18 +1,30 @@
 <template>
-  <LoadingIndicator
-    ref="loadingIndicator"
-    class="container mx-auto flex h-screen flex-col px-2 py-4 print:max-w-full"
-  >
+  <LoadingIndicator ref="loadingIndicator" class="flex h-screen flex-col">
     <PrimeToast />
     <SearchModal v-model="isSearchModalVisible" />
+
+    <!-- Top nav -->
     <NavBar
       v-if="showNavBar"
-      ref="navBar"
-      :class="{ 'print:hidden': route.name == 'note' }"
-      :hide-logo="!showNavBarLogo"
+      :class="{ 'print:hidden': route.name === 'note' }"
+      :sidebarOpen="sidebarOpen"
       @toggleSearchModal="toggleSearchModal"
+      @toggleSidebar="toggleSidebar"
     />
-    <RouterView />
+
+    <!-- Body: sidebar + content -->
+    <div class="flex flex-1 overflow-hidden">
+      <Sidebar
+        v-if="showNavBar"
+        :isOpen="sidebarOpen"
+        @toggle="toggleSidebar"
+      />
+
+      <!-- Main content -->
+      <div class="flex-1 overflow-auto">
+        <RouterView />
+      </div>
+    </div>
   </LoadingIndicator>
 </template>
 
@@ -25,6 +37,7 @@ import { RouterView, useRoute } from "vue-router";
 
 import { apiErrorHandler, getConfig } from "./api.js";
 import PrimeToast from "./components/PrimeToast.vue";
+import Sidebar from "./components/Sidebar.vue";
 import { useGlobalStore } from "./globalStore.js";
 import { loadTheme } from "./helpers.js";
 import NavBar from "./partials/NavBar.vue";
@@ -35,22 +48,21 @@ import router from "./router.js";
 const globalStore = useGlobalStore();
 const isSearchModalVisible = ref(false);
 const loadingIndicator = ref();
-const navBar = ref();
 const route = useRoute();
 const toast = useToast();
+
+// Sidebar open/closed — persisted in localStorage
+const sidebarOpen = ref(localStorage.getItem("sidebarOpen") !== "false");
+
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value;
+  localStorage.setItem("sidebarOpen", sidebarOpen.value);
+}
 
 // '/' to search
 Mousetrap.bind("/", () => {
   if (route.name !== "login") {
     toggleSearchModal();
-    return false;
-  }
-});
-
-// 'CTRL + ALT/OPT + N' to create new note
-Mousetrap.bindGlobal("ctrl+alt+n", () => {
-  if (route.name !== "login") {
-    router.push({ name: "new" });
     return false;
   }
 });
@@ -73,13 +85,7 @@ getConfig()
     loadingIndicator.value.setFailed();
   });
 
-const showNavBar = computed(() => {
-  return route.name !== "login";
-});
-
-const showNavBarLogo = computed(() => {
-  return route.name !== "home";
-});
+const showNavBar = computed(() => route.name !== "login");
 
 function toggleSearchModal() {
   isSearchModalVisible.value = !isSearchModalVisible.value;

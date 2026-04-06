@@ -1,35 +1,39 @@
 <template>
-  <nav class="mb-2 flex justify-between align-top md:mb-12">
-    <RouterLink :to="{ name: 'home' }" v-if="!hideLogo">
-      <Logo responsive></Logo>
-    </RouterLink>
-    <div class="flex grow items-start justify-end">
-      <!-- New Note -->
-      <RouterLink v-if="showNewButton" :to="{ name: 'new' }">
-        <CustomButton :iconPath="mdilPlusCircle" label="New Note" />
+  <nav class="flex items-center justify-between border-b border-theme-border px-3 py-2 print:hidden">
+    <!-- Left: sidebar toggle + logo -->
+    <div class="flex items-center gap-2">
+      <button
+        class="rounded p-1 text-theme-text-muted hover:bg-theme-background-elevated"
+        title="Toggle sidebar"
+        @click="$emit('toggleSidebar')"
+      >
+        <SvgIcon type="mdi" :path="mdiMenu" size="1.25em" />
+      </button>
+      <RouterLink :to="{ name: 'home' }">
+        <Logo responsive />
       </RouterLink>
-      <!-- Menu -->
-      <CustomButton
-        class="ml-1"
-        :iconPath="mdilMenu"
-        label="Menu"
-        @click="toggleMenu"
-      />
+    </div>
+
+    <!-- Right: search + menu -->
+    <div class="flex items-center gap-1">
+      <button
+        class="rounded px-2 py-1 text-sm text-theme-text-muted hover:bg-theme-background-elevated"
+        title="Search  (/)"
+        @click="$emit('toggleSearchModal')"
+      >
+        <SvgIcon type="mdi" :path="mdiMagnify" size="1.25em" />
+      </button>
+      <CustomButton :iconPath="mdilMenu" label="Menu" @click="toggleMenu" />
       <PrimeMenu ref="menu" :model="menuItems" :popup="true" />
     </div>
   </nav>
 </template>
 
 <script setup>
-import {
-  mdilLogout,
-  mdilMagnify,
-  mdilMenu,
-  mdilMonitor,
-  mdilNoteMultiple,
-  mdilPlusCircle,
-} from "@mdi/light-js";
-import { computed, ref } from "vue";
+import { mdiMagnify, mdiMenu } from "@mdi/js";
+import { mdilLogout, mdilMenu, mdilMonitor, mdilNoteMultiple } from "@mdi/light-js";
+import SvgIcon from "@jamescoyle/vue-icon";
+import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import CustomButton from "../components/CustomButton.vue";
@@ -45,15 +49,15 @@ const menu = ref();
 const router = useRouter();
 
 defineProps({
-  hideLogo: Boolean,
+  sidebarOpen: Boolean,
 });
 
-const emit = defineEmits(["toggleSearchModal"]);
+const emit = defineEmits(["toggleSearchModal", "toggleSidebar"]);
 
 const menuItems = [
   {
     label: "Search",
-    icon: mdilMagnify,
+    icon: mdilNoteMultiple,
     command: () => emit("toggleSearchModal"),
     keyboardShortcut: "/",
   },
@@ -86,10 +90,6 @@ const menuItems = [
   },
 ];
 
-const showNewButton = computed(() => {
-  return globalStore.config.authType !== authTypes.readOnly;
-});
-
 function logOut() {
   clearStoredToken();
   localStorage.clear();
@@ -101,6 +101,8 @@ function toggleMenu(event) {
 }
 
 function showLogOutButton() {
-  return ![authTypes.none, authTypes.readOnly].includes(globalStore.config.authType);
+  return ![authTypes.none, authTypes.readOnly].includes(
+    globalStore.config.authType,
+  );
 }
 </script>

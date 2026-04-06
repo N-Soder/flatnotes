@@ -11,6 +11,11 @@ export default defineConfig({
     // Note: The FLATNOTES_PATH_PREFIX environment variable is not supported by the dev server
     port: 8080,
     proxy: {
+      "/api/ws/": {
+        target: devApiUrl,
+        ws: true,
+        changeOrigin: true,
+      },
       "/api/": {
         target: devApiUrl,
         changeOrigin: true,

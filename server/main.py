@@ -1,6 +1,7 @@
+from contextlib import asynccontextmanager
 from typing import List, Literal
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, UploadFile, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -9,6 +10,7 @@ from attachments.base import BaseAttachments
 from attachments.models import AttachmentCreateResponse
 from auth.base import BaseAuth
 from auth.models import Login, Token
+from collab import FastAPIChannel, ws_server
 from global_config import AuthType, GlobalConfig, GlobalConfigResponseModel
 from helpers import replace_base_href
 from notes.base import BaseNotes
@@ -20,7 +22,16 @@ note_storage: BaseNotes = global_config.load_note_storage()
 attachment_storage: BaseAttachments = global_config.load_attachment_storage()
 auth_deps = [Depends(auth.authenticate)] if auth else []
 router = APIRouter()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with ws_server:
+        yield
+
+
 app = FastAPI(
+    lifespan=lifespan,
     docs_url=global_config.path_prefix + "/docs",
     openapi_url=global_config.path_prefix + "/openapi.json",
 )
@@ -254,6 +265,31 @@ def healthcheck() -> str:
     """A lightweight endpoint that simply returns 'OK' to indicate the server
     is running."""
     return "OK"
+
+
+# endregion
+
+
+# region Collaboration (Yjs WebSocket)
+@router.websocket("/api/ws/notes/{title:path}")
+async def ws_collab(websocket: WebSocket, title: str):
+    """Real-time Yjs collaboration WebSocket for a note room."""
+    # Authenticate if the app requires it
+    if auth:
+        token = websocket.cookies.get("token")
+        if not token:
+            auth_header = websocket.headers.get("authorization", "")
+            if auth_header.startswith("Bearer "):
+                token = auth_header[7:]
+        try:
+            auth._validate_token(token)
+        except Exception:
+            await websocket.close(code=4001)
+            return
+
+    await websocket.accept()
+    channel = FastAPIChannel(websocket, title)
+    await ws_server.serve(channel)
 
 
 # endregion
